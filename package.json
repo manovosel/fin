@@ -1,0 +1,12 @@
+{
+  "name": "fin-planner",
+  "private": true,
+  "scripts": {
+    "test:js": "node --test tests/js/*.test.js",
+    "test:browser": "playwright test",
+    "test": "npm run test:js && npm run test:browser"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

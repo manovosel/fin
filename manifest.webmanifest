@@ -1,0 +1,40 @@
+{
+  "id": "./",
+  "name": "FIN Planner",
+  "short_name": "FIN",
+  "description": "A calm, envelope-first personal finance planner.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101010",
+  "theme_color": "#2f8f3a",
+  "categories": ["finance"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icons/fin-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/fin-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/fin-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/fin-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

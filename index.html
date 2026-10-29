@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FIN Planner</title>
+  <meta name="application-name" content="FIN Planner">
+  <meta name="theme-color" content="#2f8f3a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FIN">
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="icons/fin-180.png">
+  <link rel="stylesheet" href="style.css?v=20261028-3">
+</head>
+<body>
+  <section id="authView" class="auth-shell hidden">
+    <div class="auth-card">
+      <h1>FIN</h1>
+      <div id="deviceAuthProgress" class="auth-state hidden" aria-live="polite">
+        <p>Checking device login…</p>
+      </div>
+      <div id="deviceAuthCancelled" class="auth-state hidden" aria-live="polite">
+        <p>Authentication cancelled</p>
+        <div class="auth-actions">
+          <button id="retryDeviceLoginBtn" type="button">Try again</button>
+          <button id="useMasterPinBtn" type="button" class="ghost">Use Master PIN</button>
+        </div>
+      </div>
+      <div id="deviceAuthFailed" class="auth-state hidden" aria-live="polite">
+        <p>Device authentication failed</p>
+        <div class="auth-actions">
+          <button id="retryFailedDeviceLoginBtn" type="button">Try again</button>
+          <button id="useMasterPinAfterFailureBtn" type="button" class="ghost">Use Master PIN</button>
+        </div>
+      </div>
+      <form id="pinLoginForm" class="auth-state hidden">
+        <label>Master PIN<input id="masterPin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" minlength="8" maxlength="32" required></label>
+        <button type="submit"><span class="button-spinner" aria-hidden="true"></span>Sign in</button>
+      </form>
+      <div id="authConfigurationRequired" class="auth-state hidden" aria-live="polite">
+        <p>Sign-in is not configured.</p>
+      </div>
+      <p id="authMessage" class="help-text hidden" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <section id="appView" class="hidden">
+    <header class="floating-header">
+      <div class="header-inner">
+        <div class="top-controls">
+          <div class="logout-control">
+            <button id="logoutBtn" type="button" class="logout-button" aria-label="Logout" title="Logout">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+            </button>
+            <button id="securityBtn" type="button" class="security-button hidden" aria-label="Security" title="Security">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.9 8.1 7 10 4.1-1.9 7-5.4 7-10V6l-7-3Z"/><path d="M9.5 12 11 13.5l3.5-4"/></svg>
+            </button>
+            <div id="versionInfo" class="version-info header-version" aria-label="Application and database versions">v1.0 · DB v1.0</div>
+          </div>
+          <div id="topSelectors" class="top-selectors">
+            <select id="monthSelect" aria-label="Month"></select>
+            <select id="yearSelect" aria-label="Year"></select>
+          </div>
+          <button id="homeBtn" type="button" class="home-button" aria-label="Month" title="Month">
+            <svg class="view-icon view-icon-month" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M7.5 3v4M16.5 3v4M3.5 10h17M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01M16 17.5h.01"/></svg>
+            <svg class="view-icon view-icon-home hidden" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11.5 9-7.5 9 7.5M5 10v10h14V10M9 20v-6h6v6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="header-lower">
+        <section id="availableDetails" class="safe-card header-safe-card available-details">
+          <div class="available-summary">
+            <span class="safe-spend-hero"><strong id="availableTotal" class="safe-spend-number">0</strong><span id="safeSpendLabel" class="safe-spend-caption"></span></span>
+          </div>
+          <div id="safeEnvelopeRows" class="safe-envelope-rows"></div>
+          <button id="addExpenseBtn" type="button" class="big-button safe-card-action">Add expense</button>
+        </section>
+      </div>
+    </header>
+
+    <main>
+      <section id="todayView" class="screen">
+        <details id="recentExpensesDetails" class="panel recent-expenses-details" data-group-key="recent-expenses" open>
+          <summary class="recent-expenses-summary"><h2>Recent expenses</h2></summary>
+          <div id="recentExpenses"></div>
+        </details>
+      </section>
+
+      <section id="planView" class="screen hidden month-grid">
+        <details id="monthDetails" class="category month-status-section" data-group-key="month">
+          <summary><strong>Month</strong><span id="monthStatusBadge" class="month-status-badge">Not started</span></summary>
+          <div id="monthStatusBody" class="month-status-body"></div>
+          <form id="monthForm" class="form-grid inline-section-form">
+            <input type="hidden" id="monthId">
+            <label>Year<input id="monthYear" type="number" min="1900" max="2200" required></label>
+            <label>Month<input id="monthNumber" type="number" min="1" max="12" required></label>
+            <label id="exchangeRateLabel">Exchange rate<input id="exchangeRate" type="text" inputmode="decimal"></label>
+            <label id="salaryLabel">Salary<input id="salary" type="text" inputmode="decimal"></label>
+            <p id="monthFormMessage" class="warning bad full hidden" role="alert"></p>
+            <div class="actions full section-actions">
+              <button id="addMonthBtn" type="button" class="ghost">Add month</button>
+              <button id="cancelAddMonthBtn" type="button" class="ghost hidden">Cancel</button>
+              <button id="copyMonthBtn" type="button">Copy month</button>
+              <button id="reportBtn" type="button" class="ghost">Report / export</button>
+              <button type="submit" class="icon-save" aria-label="Save Month" title="Save Month">
+                <span class="button-spinner" aria-hidden="true"></span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h12l2 2v16H5zM8 3v6h8V3M8 21v-7h8v7"/></svg>
+              </button>
+            </div>
+          </form>
+        </details>
+
+        <details id="accountsDetails" class="category month-section-neutral" data-group-key="accounts">
+          <summary><strong>Accounts</strong></summary>
+          <div id="accountsList" class="accounts-list" aria-live="polite"></div>
+          <div class="actions section-actions"><button type="button" id="statementImportBtn" class="ghost">Import statement</button><button type="button" id="reconcileStatementBtn" class="ghost">Reconcile</button><button type="button" id="addAccountBtn">Add Account</button></div>
+        </details>
+
+        <details id="envelopesDetails" class="category month-section-neutral" data-group-key="envelopes">
+          <summary><strong>Envelopes</strong></summary>
+          <div id="envelopesManagementList" class="envelopes-management-list" aria-live="polite"></div>
+          <div class="actions section-actions"><button id="addEnvelopeBtn" type="button">Add Envelope</button></div>
+        </details>
+
+        <details id="planSummaryDetails" class="category month-section-neutral plan-summary-details" data-group-key="plan-summary">
+          <summary><strong>Plan summary</strong></summary>
+          <section id="planSummaryCards" class="cards plan-summary-cards" aria-live="polite"></section>
+          <details id="accountSummaryDetails" class="account-summary-details" data-group-key="plan-summary-accounts" open>
+            <summary class="account-summary-head"><span class="account-summary-title">Account</span><span>Plan</span><span>Funded</span><span>Envelopes</span></summary>
+            <section id="accountSummary" class="account-summary" aria-label="Account summary"></section>
+          </details>
+        </details>
+
+        <details id="fundingDetails" class="category month-section-neutral section-envelope-allocations" data-group-key="funding">
+          <summary><strong>Funding</strong><span id="fundingTotal" class="dual-money"></span></summary>
+          <section id="months"></section>
+        </details>
+      </section>
+    </main>
+  </section>
+
+  <dialog id="expenseDialog" class="modal">
+    <div class="modal-heading">
+      <h2 id="expenseDialogTitle">Add expense</h2>
+      <button type="button" id="closeExpenseDialogBtn" class="ghost small">Close</button>
+    </div>
+    <form id="expenseForm" class="form-grid">
+      <input type="hidden" id="expenseId">
+      <label id="expenseAmountLabel" class="expense-currency-field">Amount<input id="expenseAmount" type="text" inputmode="decimal" required><small id="expenseAmountHint"></small></label>
+      <label>Envelope<select id="expenseEnvelope" required></select></label>
+      <label>Paid from<select id="expensePaymentAccount"></select></label>
+      <label>Date<input id="expenseDate" type="date" required></label>
+      <label class="full">Note<textarea id="expenseNote" rows="3" placeholder="Optional"></textarea></label>
+      <p id="expenseFormMessage" class="muted full hidden"></p>
+      <div class="actions full">
+        <button type="button" id="deleteExpenseBtn" class="danger hidden"><span class="button-spinner" aria-hidden="true"></span><span class="button-label">Delete expense</span></button>
+        <button type="button" id="editExpenseAllocationBtn" class="ghost hidden">Edit Plan</button>
+        <button type="submit" id="saveExpenseBtn"><span class="button-spinner" aria-hidden="true"></span><span class="button-label">Save expense</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="envelopeDialog" class="modal">
+    <div class="modal-heading">
+      <h2 id="envelopeDialogTitle">Envelope</h2>
+      <button type="button" id="closeEnvelopeDialogBtn" class="ghost small">Close</button>
+    </div>
+    <form id="envelopeForm" class="form-grid">
+      <input type="hidden" id="envelopeId">
+      <label>Name<input id="envelopeName" required placeholder="e.g. Food"></label>
+      <label>Default payment Account<select id="envelopeDefaultAccount"></select><small>Preselected for new expenses only; Paid from can always be changed.</small></label>
+      <label>Role<select id="envelopeRole"><option value="daily">Daily spend</option><option value="reserved">Reserved</option><option value="savings">Savings</option></select></label>
+      <label>Preferred currency<select id="envelopeCurrency"><option value="CURRENCY"></option><option value="HELPER_CURRENCY"></option></select></label>
+      <label id="envelopeGoalLabel">Savings goal<input id="envelopeGoal" type="text" inputmode="decimal" placeholder="Optional"></label>
+      <label id="envelopeGoalVisibilityLabel">Goal progress<select id="envelopeGoalVisibility"><option value="hidden">Hidden</option><option value="month">Month only</option><option value="today">Today and Month</option></select></label>
+      <label id="envelopeVisibilityLabel">Visibility<select id="envelopeVisibility"><option value="normal">Normal · Month only</option><option value="hidden">Hide balance</option><option value="today">Show on Today · excluded from safe-to-spend</option></select></label>
+      <div class="checkbox-row full">
+        <label class="checkbox-field"><input id="envelopeFixed" type="checkbox">Fixed</label>
+        <label class="checkbox-field"><input id="envelopeReset" type="checkbox">Monthly reset</label>
+      </div>
+      <label id="envelopeManualBaselineLabel">Historical baseline/month<input id="envelopeManualBaseline" type="text" inputmode="decimal" placeholder="Optional"></label>
+      <label>Baseline source<input id="envelopeManualBaselineNote" placeholder="Manual historical review"></label>
+      <p class="help-text full">Reference only; never affects FIN's calculations.</p>
+      <label class="full">Note<textarea id="envelopeNote" rows="3" placeholder="Optional"></textarea></label>
+      <p id="envelopeFormMessage" class="warning bad full hidden" role="alert"></p>
+      <div class="actions full">
+        <button type="button" id="deleteEnvelopeBtn" class="danger hidden"><span class="button-spinner" aria-hidden="true"></span>Delete</button>
+        <button type="button" id="balanceToolsBtn" class="ghost hidden">Balance tools</button>
+        <button type="submit"><span class="button-spinner" aria-hidden="true"></span>Save envelope</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="balanceDialog" class="modal balance-dialog">
+    <div class="modal-heading">
+      <div><h2 id="balanceDialogTitle">Balance tools</h2><p id="balanceCurrent" class="muted"></p></div>
+      <button type="button" id="closeBalanceDialogBtn" class="ghost small">Close</button>
+    </div>
+    <input type="hidden" id="balanceEnvelopeId">
+    <details id="envelopeBalanceObservationDetails" class="balance-tool-section">
+      <summary>Record Balance</summary>
+      <form id="envelopeBalanceObservationForm" class="form-grid balance-tool-form">
+        <label id="envelopeBalanceObservationAmountLabel">Absolute Balance<input id="envelopeBalanceObservationAmount" type="text" inputmode="decimal" required></label>
+        <label>Date<input id="envelopeBalanceObservationDate" type="date" required></label>
+        <label class="full">Reason / note<textarea id="envelopeBalanceObservationNote" rows="2" placeholder="Optional"></textarea></label>
+        <div class="actions full"><button type="submit"><span class="button-spinner" aria-hidden="true"></span>Record Balance</button></div>
+      </form>
+    </details>
+    <details id="transferBalanceDetails" class="balance-tool-section">
+      <summary>Move money</summary>
+      <form id="transferBalanceForm" class="form-grid balance-tool-form">
+        <label>To envelope<select id="transferDestination" required></select></label>
+        <label id="transferAmountLabel">Amount<input id="transferAmount" type="text" inputmode="decimal" required></label>
+        <label>Date<input id="transferDate" type="date" required></label>
+        <label>Note<input id="transferNote" placeholder="Optional"></label>
+        <div class="actions full"><button type="submit"><span class="button-spinner" aria-hidden="true"></span>Move money</button></div>
+      </form>
+    </details>
+    <section class="balance-history-section">
+      <h3>Balance history</h3>
+      <div id="balanceHistory"></div>
+    </section>
+  </dialog>
+
+  <dialog id="reportDialog" class="modal">
+    <div class="modal-heading">
+      <h2>Report / export</h2>
+      <button type="button" id="closeReportDialogBtn" class="ghost small">Close</button>
+    </div>
+    <form class="form-grid">
+      <label>From<select id="reportFromMonth" required></select></label>
+      <label>To<select id="reportToMonth" required></select></label>
+      <p class="help-text full">PDF for reading, XLSX for a spreadsheet.</p>
+      <div class="actions full report-actions">
+        <button type="button" id="fundingReviewBtn" class="ghost">Funding Review</button>
+        <button type="button" id="downloadPdfBtn" class="ghost">Download PDF</button>
+        <button type="button" id="downloadXlsxBtn">Download XLSX</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="fundingReviewDialog" class="modal wide funding-review-dialog">
+    <div class="modal-heading">
+      <div><h2>Funding Review</h2><p id="fundingReviewMonth" class="muted"></p></div>
+      <button type="button" id="closeFundingReviewDialogBtn" class="ghost small">Close</button>
+    </div>
+    <div id="fundingReviewContent" aria-live="polite"></div>
+  </dialog>
+
+  <dialog id="copyDialog" class="modal">
+    <div class="modal-heading">
+      <h2>Copy month</h2>
+      <button type="button" id="closeCopyDialogBtn" class="ghost small">Close</button>
+    </div>
+    <form id="copyForm" class="form-grid">
+      <label>From<select id="copyFromMonth" required></select></label>
+      <label>To year<input id="copyToYear" type="number" min="1900" max="2200" required></label>
+      <label>To month<input id="copyToMonth" type="number" min="1" max="12" required></label>
+      <p id="copyExistingWarning" class="warning copy-warning full hidden">This month already exists. Copying may overwrite existing plan data for the target month. Existing Today expenses will stay.</p>
+      <div class="actions full"><button type="submit"><span class="button-spinner" aria-hidden="true"></span>Copy plan</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="statementImportDialog" class="modal statement-import-dialog">
+    <div class="modal-heading">
+      <div><h2>Statement import</h2><p class="muted">Imports raw evidence only. Balances and financial records do not change.</p></div>
+      <button type="button" id="closeStatementImportDialogBtn" class="ghost small">Close</button>
+    </div>
+    <form id="statementImportForm" class="form-grid">
+      <label class="full">Statement file<input id="statementFile" type="file" accept=".xlsx,.xls" required></label>
+      <section id="statementAccountChoiceSection" class="statement-account-choice full">
+        <label>Account<select id="statementAccountChoice"><option value="">—</option></select></label>
+      </section>
+      <p id="statementImportMessage" class="warning bad full hidden" role="alert"></p>
+      <div class="actions full"><button type="submit" id="previewStatementBtn"><span class="button-spinner" aria-hidden="true"></span>Preview</button></div>
+    </form>
+    <section id="statementPreview" class="statement-preview hidden" aria-live="polite">
+      <dl class="statement-preview-grid">
+        <div><dt>Account</dt><dd id="statementPreviewAccount"></dd></div>
+        <div><dt>IBAN in file</dt><dd id="statementPreviewFileAccountNumber"></dd></div>
+        <div><dt>Statement period</dt><dd id="statementPreviewPeriod"></dd></div>
+        <div><dt>Rows found</dt><dd id="statementPreviewRows"></dd></div>
+        <div><dt>New rows</dt><dd id="statementPreviewNew"></dd></div>
+        <div><dt>Already known</dt><dd id="statementPreviewKnown"></dd></div>
+        <div><dt>Parse problems</dt><dd id="statementPreviewProblemCount"></dd></div>
+      </dl>
+      <div id="statementPreviewProblems"></div>
+      <div class="actions"><button type="button" id="importStatementBtn"><span class="button-spinner" aria-hidden="true"></span>Import evidence</button></div>
+    </section>
+  </dialog>
+
+  <dialog id="reconciliationDialog" class="modal wide reconciliation-dialog">
+    <div class="modal-heading">
+      <div><h2>Reconcile</h2><p class="muted" id="reconciliationDialogSubtitle"></p></div>
+    </div>
+    <div class="reconciliation-dialog-body">
+      <div id="reconciliationEmpty" class="muted hidden">No statement exceptions for this Account.</div>
+      <section id="reconciliationUnresolvedSection">
+        <h3 class="reconciliation-section-title">Exceptions</h3>
+        <div id="reconciliationUnresolved" class="reconciliation-list" aria-live="polite"></div>
+      </section>
+    </div>
+    <p id="reconciliationMessage" class="warning bad hidden" role="alert"></p>
+    <div class="reconciliation-dialog-actions">
+      <button type="button" id="closeReconciliationDialogBtn" class="ghost">Close</button>
+      <button type="button" id="saveReconciliationExceptionsBtn" aria-busy="false" disabled><span class="button-spinner" aria-hidden="true"></span>Save</button>
+    </div>
+  </dialog>
+
+  <dialog id="accountDialog" class="modal account-dialog">
+    <div class="modal-heading">
+      <div><h2 id="accountDialogTitle">Account</h2><p id="accountCurrentPosition" class="muted"></p></div>
+      <button type="button" id="closeAccountDialogBtn" class="ghost small">Close</button>
+    </div>
+    <form id="accountForm" class="form-grid">
+      <input type="hidden" id="accountId">
+      <label>Name<input id="accountName" required placeholder="e.g. Main account or Credit card"></label>
+      <label>Account number<input id="accountNumber" required placeholder="e.g. 0000 000000"></label>
+      <label>Currency<select id="accountCurrency" required><option value="CURRENCY"></option><option value="HELPER_CURRENCY"></option></select></label>
+      <section id="accountInitialSection" class="account-initial-section full">
+        <strong>Current Balance <span class="muted">(optional)</span></strong>
+        <p class="muted">Leave blank when the Balance is unknown. An entered amount, including zero, is recorded for today.</p>
+        <div class="form-grid">
+          <label id="accountInitialAmountLabel">Balance<input id="accountInitialAmount" type="text" inputmode="decimal"></label>
+        </div>
+      </section>
+      <p id="accountFormMessage" class="warning bad full hidden" role="alert"></p>
+      <div class="actions full">
+        <button type="button" id="archiveAccountBtn" class="danger hidden"><span class="button-spinner" aria-hidden="true"></span><span class="button-label">Archive account</span></button>
+        <button type="submit" id="saveAccountBtn"><span class="button-spinner" aria-hidden="true"></span><span class="button-label">Add account</span></button>
+      </div>
+    </form>
+    <details id="accountReconcileDetails" class="balance-tool-section hidden">
+      <summary>Record Balance</summary>
+      <form id="accountReconcileForm" class="form-grid balance-tool-form">
+        <label id="accountReconcileAmountLabel">Absolute Balance<input id="accountReconcileAmount" type="text" inputmode="decimal" required></label>
+        <label>Date<input id="accountReconcileDate" type="date" required></label>
+        <label class="full">Reason / note<textarea id="accountReconcileNote" rows="2" placeholder="Optional"></textarea></label>
+        <div class="actions full"><button type="submit"><span class="button-spinner" aria-hidden="true"></span>Record Balance</button></div>
+      </form>
+    </details>
+    <section id="accountHistorySection" class="balance-history-section hidden">
+      <h3>Account history</h3>
+      <div id="accountHistory"></div>
+    </section>
+  </dialog>
+
+  <dialog id="entryDialog" class="modal wide">
+    <div class="modal-heading">
+      <h2 id="entryDialogTitle">Plan row</h2>
+      <button type="button" id="closeEntryDialogBtn" class="ghost small">Close</button>
+    </div>
+    <form id="entryForm" class="form-grid">
+      <input type="hidden" id="entryId">
+      <select id="entryMonth" hidden required></select>
+      <input id="entryType" type="hidden" value="expense">
+      <label id="entryNameLabel" class="hidden">Name<input id="entryName"></label>
+      <label id="entryEnvelopeLabel">Envelope<select id="entryEnvelope" required></select></label>
+      <label id="entryAmountLabel">Planned amount<input id="entryAmount" type="text" inputmode="decimal" required></label>
+      <section id="allocationRecommendation" class="allocation-recommendation full" aria-live="polite"></section>
+      <input type="hidden" id="entryStatus" value="planned">
+      <label class="checkbox-field"><input id="entryBs" type="checkbox">Direct debit</label>
+      <label id="dueDateLabel">Funding date<input id="dueDate" type="date"></label>
+      <label id="entryBsPaymentAccountLabel" class="hidden">Paid from<select id="entryBsPaymentAccount"></select></label>
+      <label class="full">Note<textarea id="entryNote" rows="3"></textarea></label>
+      <input id="sortOrder" type="hidden" value="0">
+      <input id="isRecurring" type="hidden" value="1">
+      <div class="actions full">
+        <button type="button" id="deleteEntryBtn" class="danger hidden"><span class="button-spinner" aria-hidden="true"></span>Reset to 0</button>
+        <button type="submit"><span class="button-spinner" aria-hidden="true"></span>Save Plan</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="securityDialog" class="modal security-dialog">
+    <div class="modal-heading">
+      <h2>Device login</h2>
+      <button type="button" id="closeSecurityDialogBtn" class="ghost small">Close</button>
+    </div>
+    <section id="deviceCredentialList" class="device-credential-list" aria-live="polite"></section>
+    <p id="securityMessage" class="help-text hidden" aria-live="polite"></p>
+  </dialog>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="finance.js?v=20261027-1"></script>
+  <script src="app.js?v=20261028-3"></script>
+</body>
+</html>
